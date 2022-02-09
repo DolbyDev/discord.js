@@ -95,6 +95,8 @@ import {
   AuditLogEvent,
   APIMessageComponentEmoji,
   EmbedType,
+  APIModalInteractionResponseCallbackData,
+  APIModalSubmitInteraction,
 } from 'discord-api-types/v9';
 import { ChildProcess } from 'node:child_process';
 import { EventEmitter } from 'node:events';
@@ -1472,17 +1474,19 @@ export class LimitedCollection<K, V> extends Collection<K, V> {
   public keepOverLimit: ((value: V, key: K, collection: this) => boolean) | null;
 }
 
-export type MessageCollectorOptionsParams<T extends ComponentType, Cached extends boolean = boolean> =
+export type MessageComponentType = Exclude<ComponentType, ComponentType.TextInput>;
+
+export type MessageCollectorOptionsParams<T extends MessageComponentType, Cached extends boolean = boolean> =
   | {
       componentType?: T;
     } & MessageComponentCollectorOptions<MappedInteractionTypes<Cached>[T]>;
 
-export type MessageChannelCollectorOptionsParams<T extends ComponentType, Cached extends boolean = boolean> =
+export type MessageChannelCollectorOptionsParams<T extends MessageComponentType, Cached extends boolean = boolean> =
   | {
       componentType?: T;
     } & MessageChannelComponentCollectorOptions<MappedInteractionTypes<Cached>[T]>;
 
-export type AwaitMessageCollectorOptionsParams<T extends ComponentType, Cached extends boolean = boolean> =
+export type AwaitMessageCollectorOptionsParams<T extends MessageComponentType, Cached extends boolean = boolean> =
   | { componentType?: T } & Pick<
       InteractionCollectorOptions<MappedInteractionTypes<Cached>[T]>,
       keyof AwaitMessageComponentOptions<any>
@@ -1547,12 +1551,12 @@ export class Message<Cached extends boolean = boolean> extends Base {
   public webhookId: Snowflake | null;
   public flags: Readonly<MessageFlagsBitField>;
   public reference: MessageReference | null;
-  public awaitMessageComponent<T extends ComponentType = ComponentType.ActionRow>(
+  public awaitMessageComponent<T extends MessageComponentType = ComponentType.ActionRow>(
     options?: AwaitMessageCollectorOptionsParams<T, Cached>,
   ): Promise<MappedInteractionTypes<Cached>[T]>;
   public awaitReactions(options?: AwaitReactionsOptions): Promise<Collection<Snowflake | string, MessageReaction>>;
   public createReactionCollector(options?: ReactionCollectorOptions): ReactionCollector;
-  public createMessageComponentCollector<T extends ComponentType = ComponentType.ActionRow>(
+  public createMessageComponentCollector<T extends MessageComponentType = ComponentType.ActionRow>(
     options?: MessageCollectorOptionsParams<T, Cached>,
   ): InteractionCollector<MappedInteractionTypes<Cached>[T]>;
   public delete(): Promise<Message>;
@@ -1738,10 +1742,20 @@ export interface PartialInputTextData {
   customId: string;
 }
 
+export class ModalSubmitFieldsResolver {
+  constructor(components: PartialInputTextData[][]);
+  private readonly _fields: PartialInputTextData[];
+  public getField(customId: string, required: true): PartialInputTextData;
+  public getField(customId: string, required?: boolean): PartialInputTextData | undefined;
+  public getTextInputValue(customId: string, required: true): string;
+  public getTextInputValue(customId: string, required?: boolean): string | undefined;
+}
+
 export class ModalSubmitInteraction<Cached extends CacheType = CacheType> extends Interaction<Cached> {
-  private constructor(client: Client, data: unknown);
-  public customId: string;
-  public components: PartialInputTextData[][];
+  private constructor(client: Client, data: APIModalSubmitInteraction);
+  public readonly customId: string;
+  public readonly components: PartialInputTextData[][];
+  public readonly fields: ModalSubmitFieldsResolver;
   public reply(options: InteractionReplyOptions & { fetchReply: true }): Promise<GuildCacheMessage<Cached>>;
   public reply(options: string | MessagePayload | InteractionReplyOptions): Promise<void>;
   public deleteReply(): Promise<void>;
@@ -3179,7 +3193,7 @@ export interface TextBasedChannelFields extends PartialTextBasedChannelFields {
   readonly lastMessage: Message | null;
   lastPinTimestamp: number | null;
   readonly lastPinAt: Date | null;
-  awaitMessageComponent<T extends ComponentType = ComponentType.ActionRow>(
+  awaitMessageComponent<T extends MessageComponentType = ComponentType.ActionRow>(
     options?: AwaitMessageCollectorOptionsParams<T, true>,
   ): Promise<MappedInteractionTypes[T]>;
   awaitMessages(options?: AwaitMessagesOptions): Promise<Collection<Snowflake, Message>>;
@@ -3187,7 +3201,7 @@ export interface TextBasedChannelFields extends PartialTextBasedChannelFields {
     messages: Collection<Snowflake, Message> | readonly MessageResolvable[] | number,
     filterOld?: boolean,
   ): Promise<Collection<Snowflake, Message>>;
-  createMessageComponentCollector<T extends ComponentType = ComponentType.ActionRow>(
+  createMessageComponentCollector<T extends MessageComponentType = ComponentType.ActionRow>(
     options?: MessageChannelCollectorOptionsParams<T, true>,
   ): InteractionCollector<MappedInteractionTypes[T]>;
   createMessageCollector(options?: MessageCollectorOptions): MessageCollector;
@@ -5208,6 +5222,6 @@ export {
   ActionRowComponent,
   UnsafeEmbed,
   Modal,
-  InputTextComponent,
+  TextInputComponent,
 } from '@discordjs/builders';
 export { DiscordAPIError, HTTPError, RateLimitError } from '@discordjs/rest';
