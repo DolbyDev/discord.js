@@ -18,6 +18,7 @@ import {
   quote,
   roleMention,
   SelectMenuComponent as BuilderSelectMenuComponent,
+  TextInputComponent as BuilderTextInputComponent,
   spoiler,
   strikethrough,
   time,
@@ -25,6 +26,7 @@ import {
   TimestampStylesString,
   underscore,
   userMention,
+  ModalActionRowComponent,
 } from '@discordjs/builders';
 import { Collection } from '@discordjs/collection';
 import { BaseImageURLOptions, ImageURLOptions, RawFile, REST, RESTOptions } from '@discordjs/rest';
@@ -98,6 +100,10 @@ import {
   APIModalInteractionResponseCallbackData,
   APIModalSubmitInteraction,
   APIMessageActionRowComponent,
+  TextInputStyle,
+  APITextInputComponent,
+  APIModalActionRowComponent,
+  APIModalComponent,
 } from 'discord-api-types/v9';
 import { ChildProcess } from 'node:child_process';
 import { EventEmitter } from 'node:events';
@@ -200,14 +206,22 @@ export interface BaseComponentData {
   type?: ComponentType;
 }
 
-export type ActionRowComponentData = ButtonComponentData | SelectMenuComponentData;
+export type MessageActionRowComponentData = ButtonComponentData | SelectMenuComponentData;
+export type ModalActionRowComponentData = TextInputComponentData;
 
-export interface ActionRowData extends BaseComponentData {
-  components: ActionRowComponentData[];
+export interface ActionRowData<T extends MessageActionRowComponentData | ModalActionRowComponentData>
+  extends BaseComponentData {
+  components: T[];
 }
 
-export class ActionRow<T extends ActionRowComponent = ActionRowComponent> extends BuilderActionRow<T> {
-  constructor(data?: ActionRowData | APIActionRowComponent<APIMessageActionRowComponent>);
+export class ActionRow<
+  T extends ActionRowComponent | ModalActionRowComponent = ActionRowComponent,
+> extends BuilderActionRow<T> {
+  constructor(
+    data?:
+      | ActionRowData<ModalActionRowComponentData | MessageActionRowComponentData>
+      | APIActionRowComponent<APIMessageActionRowComponent | APIModalActionRowComponent>,
+  );
 }
 
 export class ActivityFlagsBitField extends BitField<ActivityFlagsString> {
@@ -331,7 +345,7 @@ export interface InteractionResponseFields<Cached extends CacheType = CacheType>
   deferReply(options?: InteractionDeferReplyOptions): Promise<void>;
   fetchReply(): Promise<GuildCacheMessage<Cached>>;
   followUp(options: string | MessagePayload | InteractionReplyOptions): Promise<GuildCacheMessage<Cached>>;
-  presentModal(modal: Modal): Promise<void>;
+  showModal(modal: Modal): Promise<void>;
 }
 
 export abstract class CommandInteraction<Cached extends CacheType = CacheType> extends Interaction<Cached> {
@@ -370,7 +384,7 @@ export abstract class CommandInteraction<Cached extends CacheType = CacheType> e
   public followUp(options: string | MessagePayload | InteractionReplyOptions): Promise<GuildCacheMessage<Cached>>;
   public reply(options: InteractionReplyOptions & { fetchReply: true }): Promise<GuildCacheMessage<Cached>>;
   public reply(options: string | MessagePayload | InteractionReplyOptions): Promise<void>;
-  public presentModal(modal: Modal): Promise<void>;
+  public showModal(modal: Modal): Promise<void>;
   private transformOption(
     option: APIApplicationCommandOption,
     resolved: APIApplicationCommandInteractionData['resolved'],
@@ -483,6 +497,10 @@ export class ButtonComponent extends BuilderButtonComponent {
 
 export class SelectMenuComponent extends BuilderSelectMenuComponent {
   public constructor(data?: SelectMenuComponentData | APISelectMenuComponent);
+}
+
+export class TextInputComponent extends BuilderTextInputComponent {
+  public constructor(data?: TextInputComponentData | APITextInputComponent);
 }
 
 export interface EmbedData {
@@ -1736,26 +1754,23 @@ export class MessageReaction {
   public toJSON(): unknown;
 }
 
-export interface PartialInputTextData {
+export interface PartialTextInputData {
   value: string;
-  // TODO: use dapi types
-  type: number;
+  type: ComponentType;
   customId: string;
 }
 
 export class ModalSubmitFieldsResolver {
-  constructor(components: PartialInputTextData[][]);
-  private readonly _fields: PartialInputTextData[];
-  public getField(customId: string, required: true): PartialInputTextData;
-  public getField(customId: string, required?: boolean): PartialInputTextData | undefined;
-  public getTextInputValue(customId: string, required: true): string;
-  public getTextInputValue(customId: string, required?: boolean): string | undefined;
+  constructor(components: PartialTextInputData[][]);
+  private readonly _fields: PartialTextInputData[];
+  public getField(customId: string): PartialTextInputData;
+  public getTextInputValue(customId: string): string;
 }
 
 export class ModalSubmitInteraction<Cached extends CacheType = CacheType> extends Interaction<Cached> {
   private constructor(client: Client, data: APIModalSubmitInteraction);
   public readonly customId: string;
-  public readonly components: PartialInputTextData[][];
+  public readonly components: PartialTextInputData[][];
   public readonly fields: ModalSubmitFieldsResolver;
   public reply(options: InteractionReplyOptions & { fetchReply: true }): Promise<GuildCacheMessage<Cached>>;
   public reply(options: string | MessagePayload | InteractionReplyOptions): Promise<void>;
@@ -2446,7 +2461,10 @@ export class Formatters extends null {
   public static userMention: typeof userMention;
 }
 
-export type ComponentData = ActionRowComponentData | ButtonComponentData | SelectMenuComponentData;
+export type ComponentData =
+  | MessageActionRowComponentData
+  | ModalActionRowComponentData
+  | ActionRowData<MessageActionRowComponentData | ModalActionRowComponentData>;
 
 export class VoiceChannel extends BaseGuildVoiceChannel {
   public readonly speakable: boolean;
@@ -4628,7 +4646,10 @@ export interface MessageEditOptions {
   files?: (FileOptions | BufferResolvable | Stream | MessageAttachment)[];
   flags?: BitFieldResolvable<MessageFlagsString, number>;
   allowedMentions?: MessageMentionOptions;
-  components?: (ActionRow<ActionRowComponent> | (Required<BaseComponentData> & ActionRowData))[];
+  components?: (
+    | ActionRow<ActionRowComponent>
+    | (Required<BaseComponentData> & ActionRowData<MessageActionRowComponentData>)
+  )[];
 }
 
 export interface MessageEvent {
@@ -4665,7 +4686,10 @@ export interface MessageOptions {
   nonce?: string | number;
   content?: string | null;
   embeds?: (Embed | APIEmbed)[];
-  components?: (ActionRow<ActionRowComponent> | (Required<BaseComponentData> & ActionRowData))[];
+  components?: (
+    | ActionRow<ActionRowComponent>
+    | (Required<BaseComponentData> & ActionRowData<MessageActionRowComponentData>)
+  )[];
   allowedMentions?: MessageMentionOptions;
   files?: (FileOptions | BufferResolvable | Stream | MessageAttachment)[];
   reply?: ReplyOptions;
@@ -4713,6 +4737,23 @@ export interface SelectMenuComponentOptionData {
   emoji?: APIMessageComponentEmoji;
   label: string;
   value: string;
+}
+
+export interface TextInputComponentData extends BaseComponentData {
+  customId: string;
+  style: TextInputStyle;
+  label: string;
+  minLength?: number;
+  maxLength?: number;
+  required?: boolean;
+  value?: string;
+  placeholder?: string;
+}
+
+export interface ModalData {
+  customId: string;
+  title: string;
+  components: ActionRowData<ModalActionRowComponentData>;
 }
 
 export type MessageTarget =
@@ -5222,7 +5263,5 @@ export {
   UnsafeSelectMenuOption,
   ActionRowComponent,
   UnsafeEmbed,
-  Modal,
-  TextInputComponent,
 } from '@discordjs/builders';
 export { DiscordAPIError, HTTPError, RateLimitError } from '@discordjs/rest';
