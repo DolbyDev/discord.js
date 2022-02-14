@@ -1758,23 +1758,23 @@ export class MessageReaction {
   public toJSON(): unknown;
 }
 
-export interface PartialTextInputData {
+export interface ModalFieldData {
   value: string;
   type: ComponentType;
   customId: string;
 }
 
 export class ModalSubmitFieldsResolver {
-  constructor(components: PartialTextInputData[][]);
-  private readonly _fields: PartialTextInputData[];
-  public getField(customId: string): PartialTextInputData;
+  constructor(components: ModalFieldData[][]);
+  private readonly _fields: ModalFieldData[];
+  public getField(customId: string): ModalFieldData;
   public getTextInputValue(customId: string): string;
 }
 
 export class ModalSubmitInteraction<Cached extends CacheType = CacheType> extends Interaction<Cached> {
   private constructor(client: Client, data: APIModalSubmitInteraction);
   public readonly customId: string;
-  public readonly components: PartialTextInputData[][];
+  public readonly components: ModalFieldData[][];
   public readonly fields: ModalSubmitFieldsResolver;
   public reply(options: InteractionReplyOptions & { fetchReply: true }): Promise<GuildCacheMessage<Cached>>;
   public reply(options: string | MessagePayload | InteractionReplyOptions): Promise<void>;
@@ -4653,6 +4653,7 @@ export interface MessageEditOptions {
   components?: (
     | ActionRow<ActionRowComponent>
     | (Required<BaseComponentData> & ActionRowData<MessageActionRowComponentData>)
+    | APIActionRowComponent<APIMessageActionRowComponent>
   )[];
 }
 
@@ -4693,6 +4694,7 @@ export interface MessageOptions {
   components?: (
     | ActionRow<ActionRowComponent>
     | (Required<BaseComponentData> & ActionRowData<MessageActionRowComponentData>)
+    | APIActionRowComponent<APIMessageActionRowComponent>
   )[];
   allowedMentions?: MessageMentionOptions;
   files?: (FileOptions | BufferResolvable | Stream | MessageAttachment)[];
@@ -4757,7 +4759,7 @@ export interface TextInputComponentData extends BaseComponentData {
 export interface ModalData {
   customId: string;
   title: string;
-  components: ActionRowData<ModalActionRowComponentData>;
+  components: ActionRowData<ModalActionRowComponentData>[];
 }
 
 export type MessageTarget =
@@ -5255,6 +5257,7 @@ export {
   StageInstancePrivacyLevel,
   StickerType,
   StickerFormatType,
+  TextInputStyle,
   GuildSystemChannelFlags,
   ThreadMemberFlags,
   UserFlags,

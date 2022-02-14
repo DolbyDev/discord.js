@@ -1,4 +1,4 @@
-import { APIMessageComponent, APIModalComponent, ComponentType } from 'discord-api-types/v9';
+import { APIBaseComponent, APIMessageComponent, APIModalComponent, ComponentType } from 'discord-api-types/v9';
 import { ActionRow, ButtonComponent, Component, SelectMenuComponent, TextInputComponent } from '../index';
 import type { MessageComponent } from './ActionRow';
 
@@ -20,16 +20,14 @@ export function createComponent<C extends MessageComponent | APIModalComponent>(
 export function createComponent(data: APIMessageComponent | APIModalComponent): Component {
 	switch (data.type) {
 		case ComponentType.ActionRow:
-			// @ts-expect-error
 			return data instanceof ActionRow ? data : new ActionRow(data);
 		case ComponentType.Button:
 			return data instanceof ButtonComponent ? data : new ButtonComponent(data);
 		case ComponentType.SelectMenu:
 			return data instanceof SelectMenuComponent ? data : new SelectMenuComponent(data);
 		case ComponentType.TextInput:
-			return new TextInputComponent(data);
+			return data instanceof TextInputComponent ? data : new TextInputComponent(data);
 		default:
-			// @ts-expect-error
-			throw new Error(`Cannot serialize component type: ${data.type as number}`);
+			throw new Error(`Cannot serialize component type: ${(data as APIBaseComponent<ComponentType>).type}`);
 	}
 }
