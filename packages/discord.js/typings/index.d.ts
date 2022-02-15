@@ -1,6 +1,6 @@
 import {
   ActionRow as BuilderActionRow,
-  ActionRowComponent,
+  MessageActionRowComponent,
   blockQuote,
   bold,
   ButtonComponent as BuilderButtonComponent,
@@ -215,7 +215,7 @@ export interface ActionRowData<T extends MessageActionRowComponentData | ModalAc
 }
 
 export class ActionRow<
-  T extends ActionRowComponent | ModalActionRowComponent = ActionRowComponent,
+  T extends MessageActionRowComponent | ModalActionRowComponent = MessageActionRowComponent,
 > extends BuilderActionRow<T> {
   constructor(
     data?:
@@ -1542,7 +1542,7 @@ export class Message<Cached extends boolean = boolean> extends Base {
   public readonly channel: If<Cached, GuildTextBasedChannel, TextBasedChannel>;
   public channelId: Snowflake;
   public readonly cleanContent: string;
-  public components: ActionRow<ActionRowComponent>[];
+  public components: ActionRow<MessageActionRowComponent>[];
   public content: string;
   public readonly createdAt: Date;
   public createdTimestamp: number;
@@ -1593,7 +1593,7 @@ export class Message<Cached extends boolean = boolean> extends Base {
   public react(emoji: EmojiIdentifierResolvable): Promise<MessageReaction>;
   public removeAttachments(): Promise<Message>;
   public reply(options: string | MessagePayload | ReplyMessageOptions): Promise<Message>;
-  public resolveComponent(customId: string): ActionRowComponent | null;
+  public resolveComponent(customId: string): MessageActionRowComponent | null;
   public startThread(options: StartThreadOptions): Promise<ThreadChannel>;
   public suppressEmbeds(suppress?: boolean): Promise<Message>;
   public toJSON(): unknown;
@@ -1642,10 +1642,10 @@ export class MessageComponentInteraction<Cached extends CacheType = CacheType> e
   protected constructor(client: Client, data: RawMessageComponentInteractionData);
   public readonly component: CacheTypeReducer<
     Cached,
-    ActionRowComponent,
+    MessageActionRowComponent,
     Exclude<APIMessageComponent, APIActionRowComponent<APIMessageActionRowComponent>>,
-    ActionRowComponent | Exclude<APIMessageComponent, APIActionRowComponent<APIMessageActionRowComponent>>,
-    ActionRowComponent | Exclude<APIMessageComponent, APIActionRowComponent<APIMessageActionRowComponent>>
+    MessageActionRowComponent | Exclude<APIMessageComponent, APIActionRowComponent<APIMessageActionRowComponent>>,
+    MessageActionRowComponent | Exclude<APIMessageComponent, APIActionRowComponent<APIMessageActionRowComponent>>
   >;
   public componentType: Exclude<ComponentType, ComponentType.ActionRow>;
   public customId: string;
@@ -4601,7 +4601,7 @@ export type ActionRowComponentOptions =
   | (Required<BaseComponentData> & ButtonComponentData)
   | (Required<BaseComponentData> & SelectMenuComponentData);
 
-export type MessageActionRowComponentResolvable = ActionRowComponent | ActionRowComponentOptions;
+export type MessageActionRowComponentResolvable = MessageActionRowComponent | ActionRowComponentOptions;
 
 export interface MessageActivity {
   partyId: string;
@@ -4631,7 +4631,7 @@ export interface MessageCollectorOptions extends CollectorOptions<[Message]> {
   maxProcessed?: number;
 }
 
-export type MessageComponent = Component | ActionRow<ActionRowComponent> | ButtonComponent | SelectMenuComponent;
+export type MessageComponent = Component | ActionRow<MessageActionRowComponent> | ButtonComponent | SelectMenuComponent;
 
 export type MessageComponentCollectorOptions<T extends MessageComponentInteraction> = Omit<
   InteractionCollectorOptions<T>,
@@ -4651,7 +4651,7 @@ export interface MessageEditOptions {
   flags?: BitFieldResolvable<MessageFlagsString, number>;
   allowedMentions?: MessageMentionOptions;
   components?: (
-    | ActionRow<ActionRowComponent>
+    | ActionRow<MessageActionRowComponent>
     | (Required<BaseComponentData> & ActionRowData<MessageActionRowComponentData>)
     | APIActionRowComponent<APIMessageActionRowComponent>
   )[];
@@ -4692,7 +4692,7 @@ export interface MessageOptions {
   content?: string | null;
   embeds?: (Embed | APIEmbed)[];
   components?: (
-    | ActionRow<ActionRowComponent>
+    | ActionRow<MessageActionRowComponent>
     | (Required<BaseComponentData> & ActionRowData<MessageActionRowComponentData>)
     | APIActionRowComponent<APIMessageActionRowComponent>
   )[];
@@ -5268,7 +5268,7 @@ export {
   UnsafeSelectMenuComponent,
   SelectMenuOption,
   UnsafeSelectMenuOption,
-  ActionRowComponent,
+  MessageActionRowComponent,
   UnsafeEmbed,
   ModalActionRowComponent,
 } from '@discordjs/builders';
