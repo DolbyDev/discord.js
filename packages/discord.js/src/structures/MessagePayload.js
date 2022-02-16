@@ -193,7 +193,7 @@ class MessagePayload {
       tts,
       nonce,
       embeds: this.options.embeds?.map(embed =>
-        embed instanceof Embed ? embed.toJSON() : this.target.client.options.jsonTransformer(embed),
+        isJSONEncodable(embed) ? embed.toJSON() : this.target.client.options.jsonTransformer(embed),
       ),
       components,
       username,

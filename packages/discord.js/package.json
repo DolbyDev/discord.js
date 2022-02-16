@@ -55,7 +55,6 @@
     "discord-api-types": "^0.27.1",
     "lodash.snakecase": "^4.1.1",
     "node-fetch": "^2.6.7",
-    "snakecase-keys": "^5.1.2",
     "ws": "^8.5.0"
   },
   "devDependencies": {
